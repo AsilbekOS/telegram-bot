@@ -2,7 +2,9 @@ package bot
 
 import (
 	downloader "bot/service/download"
+	"fmt"
 	"log"
+	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -34,29 +36,49 @@ func (b *Bot) Start() {
 			continue
 		}
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ma'lumot yuklanmoqda")
-		if _, err := b.API.Send(msg); err != nil {
-			log.Println("Ma'lumotni yuboishda xatolik...", err)
+		// Foydalanuvchiga yuklash jarayoni haqida ma'lumot beramiz
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ma'lumot yuklanmoqda...")
+		msg.ReplyToMessageID = update.Message.MessageID // Bu xabarni reply qilib yuboradi
+
+		sendMessage, err := b.API.Send(msg)
+		if err != nil {
+			log.Println("Ma'lumotni yuborishda xatolik...", err)
 		}
 
 		url := update.Message.Text
-		// chatid := update.Message.Chat.ID
-		// chatidStr := strconv.Itoa(int(chatid))
+		chatID := update.Message.Chat.ID
+		// chatIDStr := strconv.Itoa(int(chatID))
 
-		message := ""
-		// err := downloader.DownloadAndSendToTelegram(url, "1080", b.API.Token, chatidStr)
-		err = downloader.DownloadMedia(url, "2160")
+		// Yuklab olish va yuborish jarayoni
+		filePath, err := downloader.DownloadMedia(url, "360")
 		if err != nil {
-			message = "Download failed:"
-		} else {
-			message = "Download successful!"
+			msg = tgbotapi.NewMessage(chatID, fmt.Sprintf("Download failed: %v", err))
+			msg.ReplyToMessageID = update.Message.MessageID // Xatolikni ham reply qiladi
+			b.API.Send(msg)
+			continue
 		}
 
-		// videoConfig := tgbotapi.NewVideoUpload(chatid, video)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, message)
-		if _, err := b.API.Send(msg); err != nil {
+		deleteMsg := tgbotapi.DeleteMessageConfig{
+			ChatID:    chatID,
+			MessageID: sendMessage.MessageID,
+		}
+		if _, err := b.API.DeleteMessage(deleteMsg); err != nil {
+			log.Println("Xabarni o'chirishda xatolik:", err)
+		}
+
+		// Fayl yuklanganidan so'ng foydalanuvchiga video yuborish
+		video := tgbotapi.NewVideoUpload(chatID, filePath)
+		video.ReplyToMessageID = update.Message.MessageID
+		if _, err := b.API.Send(video); err != nil {
+			msg = tgbotapi.NewMessage(chatID, "Video yuborishda xatolik: "+err.Error())
+			msg.ReplyToMessageID = update.Message.MessageID
+			b.API.Send(msg)
 			log.Println("Video yuborishda xatolik:", err)
 		}
 
+		// Faylni o'chirib tashlaymiz, chunki u endi kerak emas
+		if err := os.Remove(filePath); err != nil {
+			log.Println("Faylni o'chirishda xatolik:", err)
+		}
 	}
 }
