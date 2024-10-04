@@ -18,6 +18,7 @@ func NewBot(token string) (*Bot, error) {
 	if err != nil {
 		return nil, err
 	}
+	
 	log.Printf("Authorized on account %s", api.Self.UserName)
 	return &Bot{API: api}, nil
 }

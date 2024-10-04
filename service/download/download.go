@@ -18,11 +18,25 @@ func IsYouTubeURL(u string) bool {
 	return strings.Contains(parsedURL.Hostname(), "youtube.com") || strings.Contains(parsedURL.Hostname(), "youtu.be")
 }
 
+// IsInstagramURL checks if the provided URL is an Instagram URL
+func IsInstagramURL(u string) bool {
+	parsedURL, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+	return strings.Contains(parsedURL.Hostname(), "instagram.com")
+}
+
 // DownloadMedia downloads media from the given URL based on its type and returns the file path
 func DownloadMedia(mediaURL, format string) (string, error) {
 	outputFile := "output.mp4" // Output fayl nomini beramiz, bu so'ngra o'chiriladi
 	if IsYouTubeURL(mediaURL) {
 		err := DownloadingFromYoutube(mediaURL, format, outputFile)
+		if err != nil {
+			return "", err
+		}
+	} else if IsInstagramURL(mediaURL) {
+		err := DownloadingFromInstagram(mediaURL, outputFile)
 		if err != nil {
 			return "", err
 		}
@@ -50,6 +64,19 @@ func DownloadingFromYoutube(mediaURL, format, outputFile string) error {
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error downloading media: %v", err)
+	}
+	return nil
+}
+
+// Instagramdan media yuklash uchun
+func DownloadingFromInstagram(mediaURL, outputFile string) error {
+	fmt.Println("Downloading from Instagram")
+	cmd := exec.Command("yt-dlp", "--cookies", "./service/download/cookies.txt", "--merge-output-format", "mp4", "-o", outputFile, mediaURL)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error downloading media from Instagram: %v", err)
 	}
 	return nil
 }
