@@ -29,12 +29,26 @@ func IsInstagramURL(u string) bool {
 
 // DownloadMedia downloads media from the given URL based on its type and returns the file path
 func DownloadMedia(mediaURL, format string) (string, error) {
+	// -----------------------------------------------------------------------------------------------
 	parsedURL, err := url.Parse(mediaURL) // mediaURL ni tahlil qiling
 	if err != nil {
 		return "", fmt.Errorf("error parsing media URL: %v", err)
 	}
 	outputFile := fmt.Sprintf("%s.mp4", strings.ReplaceAll(parsedURL.Path, "/", "_"))
 	// Output fayl nomini beramiz, bu so'ngra o'chiriladi
+
+	count := 1
+	// Fayl mavjud bo'lsa, yangi nom yaratish
+	for {
+		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+			// Agar fayl mavjud bo'lmasa, tsiklni to'xtatish
+			break
+		}
+		// Agar fayl mavjud bo'lsa, oxiriga raqam qo'shish
+		outputFile = fmt.Sprintf("%s_%d.mp4", strings.TrimSuffix(outputFile, ".mp4"), count)
+		count++
+	}
+	// -----------------------------------------------------------------------------------------------
 
 	if IsYouTubeURL(mediaURL) {
 		err := DownloadingFromYoutube(mediaURL, format, outputFile)
