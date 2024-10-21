@@ -46,8 +46,17 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	messageID := update.Message.MessageID
 
+	// /start buyruqini tekshirish
+	if update.Message.Text == "/start" {
+		welcomeMsg := tgbotapi.NewMessage(chatID, "DOWNLOADER BOTIGA XUSH KELIBSIZ...")
+		if _, err := b.API.Send(welcomeMsg); err != nil {
+			log.Println("Xabar yuborishda xatolik:", err)
+		}
+		return
+	}
+
 	// Foydalanuvchiga "Yuklanmoqda..." xabarini yuborish
-	msg := tgbotapi.NewMessage(chatID, "Ma'lumot yuklanmoqda...")
+	msg := tgbotapi.NewMessage(chatID, "⏳")
 	msg.ReplyToMessageID = messageID
 
 	sentMessage, err := b.API.Send(msg)
@@ -61,8 +70,16 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	// Media yuklab olish
 	filePath, err := downloader.DownloadMedia(url, "720")
 	if err != nil {
+		// "Ma'lumot yuklanmoqda..." xabarini o'chirish
+		deleteMsg := tgbotapi.DeleteMessageConfig{
+			ChatID:    chatID,
+			MessageID: sentMessage.MessageID,
+		}
+		if _, err := b.API.DeleteMessage(deleteMsg); err != nil {
+			log.Println("Xabarni o'chirishda xatolik:", err)
+		}
 		// Xatolik haqida xabar yuborish
-		errorMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Download failed: %v", err))
+		errorMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("%v", err))
 		errorMsg.ReplyToMessageID = messageID
 		b.API.Send(errorMsg)
 		return

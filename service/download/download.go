@@ -29,7 +29,13 @@ func IsInstagramURL(u string) bool {
 
 // DownloadMedia downloads media from the given URL based on its type and returns the file path
 func DownloadMedia(mediaURL, format string) (string, error) {
-	outputFile := "output.mp4" // Output fayl nomini beramiz, bu so'ngra o'chiriladi
+	parsedURL, err := url.Parse(mediaURL) // mediaURL ni tahlil qiling
+	if err != nil {
+		return "", fmt.Errorf("error parsing media URL: %v", err)
+	}
+	outputFile := fmt.Sprintf("%s.mp4", strings.ReplaceAll(parsedURL.Path, "/", "_"))
+	// Output fayl nomini beramiz, bu so'ngra o'chiriladi
+
 	if IsYouTubeURL(mediaURL) {
 		err := DownloadingFromYoutube(mediaURL, format, outputFile)
 		if err != nil {
@@ -41,7 +47,7 @@ func DownloadMedia(mediaURL, format string) (string, error) {
 			return "", err
 		}
 	} else {
-		err := DownloadingFromOtherOlatform(outputFile, mediaURL)
+		err := DownloadingFromOtherPlatform(outputFile, mediaURL)
 		if err != nil {
 			return "", err
 		}
@@ -63,7 +69,7 @@ func DownloadingFromYoutube(mediaURL, format, outputFile string) error {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error downloading media: %v", err)
+		return fmt.Errorf("YouTubedan ma'lumotni yuklab bo'lmadi")
 	}
 	return nil
 }
@@ -76,13 +82,13 @@ func DownloadingFromInstagram(mediaURL, outputFile string) error {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error downloading media from Instagram: %v", err)
+		return fmt.Errorf("instagramdan ma'lumotni yuklab bo'lmadi")
 	}
 	return nil
 }
 
 // Boshqa platformalardan media yuklashni o'zgarishlar kiritish uchun beyerda ishlang
-func DownloadingFromOtherOlatform(outputFile, mediaURL string) error {
+func DownloadingFromOtherPlatform(outputFile, mediaURL string) error {
 	fmt.Println("Downloading from other platform")
 	// cmd := exec.Command("yt-dlp", "-f", "best", outputFile, mediaURL)
 	cmd := exec.Command("yt-dlp", "-f", "b", "--merge-output-format", "mp4", "-o", outputFile, mediaURL)
@@ -90,7 +96,7 @@ func DownloadingFromOtherOlatform(outputFile, mediaURL string) error {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error downloading media: %v", err)
+		return fmt.Errorf("ma'lumotni yuklab bo'lmadi")
 	}
 	return nil
 }
