@@ -107,6 +107,6 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	// Faylni o'chirib tashlash
 	if err := os.Remove(filePath); err != nil {
 		log.Println("Faylni o'chirishda xatolik:", err)
+		log.Println("Ma'lumot muvaffaqiyatli yuborildi...")
 	}
-	log.Println("Ma'lumot muvaffaqiyatli yuborildi...")
 }
